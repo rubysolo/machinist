@@ -2,7 +2,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 require 'machinist/active_record'
 
 module MachinistActiveRecordSpecs
-  
+
   class Person < ActiveRecord::Base
     attr_protected :password
   end
@@ -25,46 +25,18 @@ module MachinistActiveRecordSpecs
       ActiveRecord::Base.establish_connection(:adapter => "sqlite3", :database => ":memory:")
       load(File.dirname(__FILE__) + "/db/schema.rb")
     end
-  
+
     before(:each) do
-      Person.clear_blueprints!
-      Post.clear_blueprints!
-      Comment.clear_blueprints!
+      [Person, Admin, Post, Comment].each(&:clear_blueprints!)
     end
-  
+
     describe "make method" do
       it "should support single-table inheritance" do
         Person.blueprint { }
+        Admin.blueprint  { }
         admin = Admin.make
         admin.should_not be_new_record
         admin.type.should == "Admin"
-      end
-
-      it "should support anonymous and named blueprints for both superclasses and subclasses" do
-        Person.blueprint           { name "John" }
-        Person.blueprint(:special) { name "Paul" }
-        Admin.blueprint            { name "George" }
-        Admin.blueprint(:special)  { name "Ringo" }
-
-        person = Person.make
-        person.should_not be_new_record
-        person.type.should == nil
-        person.name.should == "John"
-
-        person = Person.make(:special)
-        person.should_not be_new_record
-        person.type.should == nil
-        person.name.should == "Paul"
-
-        admin = Admin.make
-        admin.should_not be_new_record
-        admin.type.should == "Admin"
-        admin.name.should == "George"
-
-        admin = Admin.make(:special)
-        admin.should_not be_new_record
-        admin.type.should == "Admin"
-        admin.name.should == "Ringo"
       end
 
       it "should save the constructed object" do
@@ -72,38 +44,45 @@ module MachinistActiveRecordSpecs
         person = Person.make
         person.should_not be_new_record
       end
-  
+
       it "should create an object through belongs_to association" do
         Post.blueprint { }
         Comment.blueprint { post }
         Comment.make.post.class.should == Post
       end
-  
+
       it "should create an object through belongs_to association with a class_name attribute" do
         Person.blueprint { }
         Comment.blueprint { author }
         Comment.make.author.class.should == Person
       end
-      
+
+      it "should create an object through belongs_to association using a named blueprint" do
+        Post.blueprint { }
+        Post.blueprint(:dummy) { title 'Dummy Post' }
+        Comment.blueprint { post(:dummy) }
+        Comment.make.post.title.should == 'Dummy Post'
+      end
+
       it "should allow setting a protected attribute in the blueprint" do
         Person.blueprint do
           password "Test"
         end
         Person.make.password.should == "Test"
       end
-      
+
       it "should allow overriding a protected attribute" do
         Person.blueprint do
           password "Test"
         end
         Person.make(:password => "New").password.should == "New"
       end
-      
+
       it "should allow setting the id attribute in a blueprint" do
         Person.blueprint { id 12345 }
         Person.make.id.should == 12345
       end
-      
+
       it "should allow setting the type attribute in a blueprint" do
         Person.blueprint { type "Person" }
         Person.make.type.should == "Person"
@@ -121,17 +100,17 @@ module MachinistActiveRecordSpecs
       end
 
       describe "on a has_many association" do
-        before do 
+        before do
           Post.blueprint { }
           Comment.blueprint { post }
           @post = Post.make
           @comment = @post.comments.make
         end
-    
+
         it "should save the created object" do
           @comment.should_not be_new_record
         end
-    
+
         it "should set the parent association on the created object" do
           @comment.post.should == @post
         end
@@ -145,7 +124,7 @@ module MachinistActiveRecordSpecs
         person = Person.plan
         Person.count.should == person_count
       end
-  
+
       it "should create an object through a belongs_to association, and return its id" do
         Post.blueprint { }
         Comment.blueprint { post }
@@ -155,7 +134,7 @@ module MachinistActiveRecordSpecs
         comment[:post].should be_nil
         comment[:post_id].should_not be_nil
       end
-  
+
       describe "on a has_many association" do
         before do
           Post.blueprint { }
@@ -167,12 +146,12 @@ module MachinistActiveRecordSpecs
           @post_count = Post.count
           @comment = @post.comments.plan
         end
-    
+
         it "should not include the parent in the returned hash" do
           @comment[:post].should be_nil
           @comment[:post_id].should be_nil
         end
-    
+
         it "should not create an extra parent object" do
           Post.count.should == @post_count
         end
@@ -185,14 +164,14 @@ module MachinistActiveRecordSpecs
         person = Person.make_unsaved
         person.should be_new_record
       end
-  
+
       it "should not save associated objects" do
         Post.blueprint { }
         Comment.blueprint { post }
         comment = Comment.make_unsaved
         comment.post.should be_new_record
       end
-  
+
       it "should save objects made within a passed-in block" do
         Post.blueprint { }
         Comment.blueprint { }
@@ -202,6 +181,6 @@ module MachinistActiveRecordSpecs
         comment.should_not be_new_record
       end
     end
-  
+
   end
 end

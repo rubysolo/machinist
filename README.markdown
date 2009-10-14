@@ -56,7 +56,7 @@ Download & Install
       
 ### Installing as a Gem
 
-    sudo gem install notahat-machinist --source http://gems.github.com
+    sudo gem install machinist --source http://gemcutter.org
 
 ### Setting up your project
 
@@ -77,7 +77,8 @@ Set Sham to reset before each test. In the `class Test::Unit::TestCase` block in
     
 or, if you're on RSpec, in the `Spec::Runner.configure` block in your `spec_helper.rb`, add:
 
-    config.before(:each) { Sham.reset }
+    config.before(:all)    { Sham.reset(:before_all)  }
+    config.before(:each)   { Sham.reset(:before_each) }
 
     
 Documentation
@@ -306,6 +307,7 @@ Other contributors include:
 [Chris Lloyd](http://github.com/chrislloyd),
 [Adam Meehan](http://github.com/adzap),
 [Kyle Neath](http://github.com/kneath),
+[Lawrence Pit](http://github.com/lawrencepit),
 [T.J. Sheehy](http://github.com/tjsheehy),
 [Roland Swingler](http://github.com/knaveofdiamonds),
 [Gareth Townsend](http://github.com/quamen),

@@ -3,7 +3,7 @@ require 'machinist/data_mapper'
 require 'dm-validations'
 
 module MachinistDataMapperSpecs
-  
+
   class Person
     include DataMapper::Resource
     property :id,       Serial
@@ -34,7 +34,7 @@ module MachinistDataMapperSpecs
     belongs_to :author, :class_name => "Person", :child_key => [:author_id]
   end
 
-  describe Machinist, "DataMapper adapter" do  
+  describe Machinist, "DataMapper adapter" do
     before(:suite) do
       DataMapper::Logger.new(File.dirname(__FILE__) + "/log/test.log", :debug)
       DataMapper.setup(:default, "sqlite3::memory:")
@@ -42,45 +42,17 @@ module MachinistDataMapperSpecs
     end
 
     before(:each) do
-      Person.clear_blueprints!
-      Post.clear_blueprints!
-      Comment.clear_blueprints!
+      [Person, Admin, Post, Comment].each(&:clear_blueprints!)
     end
 
     describe "make method" do
       it "should support inheritance" do
         Person.blueprint {}
+        Admin.blueprint {}
 
         admin = Admin.make
         admin.should_not be_new_record
         admin.type.should_not be_nil
-      end
-
-      it "should support anonymous and named blueprints for both superclasses and subclasses" do
-        Person.blueprint           { name "John" }
-        Person.blueprint(:special) { name "Paul" }
-        Admin.blueprint            { name "George" }
-        Admin.blueprint(:special)  { name "Ringo" }
-
-        person = Person.make
-        person.should_not be_new_record
-        person.type.should == MachinistDataMapperSpecs::Person
-        person.name.should == "John"
-
-        person = Person.make(:special)
-        person.should_not be_new_record
-        person.type.should == MachinistDataMapperSpecs::Person
-        person.name.should == "Paul"
-
-        admin = Admin.make
-        admin.should_not be_new_record
-        admin.type.should == MachinistDataMapperSpecs::Admin
-        admin.name.should == "George"
-
-        admin = Admin.make(:special)
-        admin.should_not be_new_record
-        admin.type.should == MachinistDataMapperSpecs::Admin
-        admin.name.should == "Ringo"
       end
 
       it "should save the constructed object" do
@@ -126,7 +98,7 @@ module MachinistDataMapperSpecs
         person = Person.plan
         Person.all.length.should == person_count
       end
-  
+
       it "should return a regular attribute in the hash" do
         Post.blueprint { title "Test" }
         post = Post.plan
@@ -150,14 +122,14 @@ module MachinistDataMapperSpecs
         person = Person.make_unsaved
         person.should be_new_record
       end
-  
+
       it "should not save associated objects" do
         Post.blueprint { }
         Comment.blueprint { post }
         comment = Comment.make_unsaved
         comment.post.should be_new_record
       end
-  
+
       it "should save objects made within a passed-in block" do
         Post.blueprint { }
         Comment.blueprint { }
@@ -167,7 +139,7 @@ module MachinistDataMapperSpecs
         comment.should_not be_new_record
       end
     end
-  
+
   end
 end
 

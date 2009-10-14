@@ -1,5 +1,3 @@
-require 'active_support'
-
 class Sham
   @@shams = {}
   
@@ -24,8 +22,8 @@ class Sham
     @@shams = {}
   end
 
-  def self.reset
-    @@shams.values.each(&:reset)
+  def self.reset(scope = :before_all)
+    @@shams.values.each { |sham| sham.reset(scope) }
   end
   
   def self.define(&block)
@@ -40,8 +38,14 @@ class Sham
     generate_values(12)
   end
   
-  def reset
-    @offset = 0
+  def reset(scope)
+    if scope == :before_all
+      @offset, @before_offset = 0, nil
+    elsif @before_offset
+      @offset = @before_offset
+    else
+      @before_offset = @offset
+    end
   end
   
   def fetch_value
@@ -50,9 +54,9 @@ class Sham
       generate_values(2 * @values.length)
       raise "Can't generate more unique values for Sham.#{@name}" if @offset >= @values.length
     end
-    returning @values[@offset] do
-      @offset += 1
-    end
+    result = @values[@offset]
+    @offset += 1
+    result
   end
     
 private
